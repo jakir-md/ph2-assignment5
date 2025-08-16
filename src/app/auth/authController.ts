@@ -16,7 +16,10 @@ const loginUser = catchAsync(
       refreshToken: result.refreshToken,
     });
     sendResponse(res, {
-      data: result.user,
+      data: {
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+      },
       success: true,
       statusCode: StatusCodes.OK,
       message: "User Loggged in Successfully.",
@@ -50,21 +53,21 @@ const logOut = catchAsync(
 const getAccessToken = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const refreshToken = req.cookies.refreshToken;
-    if(!refreshToken){
-        throw new AppError(StatusCodes.BAD_REQUEST, "Refresh Token Not Found.")
+    if (!refreshToken) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "Refresh Token Not Found.");
     }
     const tokenInfo = await AuthServices.getAccessToken(refreshToken);
     setAuthCookie(res, tokenInfo);
     sendResponse(res, {
-        success: true,
-        data: tokenInfo.accessToken,
-        message: "Access Token Retrieved Successfully.",
-        statusCode: StatusCodes.OK
-    })
+      success: true,
+      data: tokenInfo.accessToken,
+      message: "Access Token Retrieved Successfully.",
+      statusCode: StatusCodes.OK,
+    });
   }
 );
 export const AuthControllers = {
   loginUser,
   logOut,
-  getAccessToken
+  getAccessToken,
 };

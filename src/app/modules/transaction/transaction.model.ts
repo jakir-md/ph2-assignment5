@@ -22,7 +22,10 @@ const transactionSchema = new Schema<ITransaction>(
     toId: {
       type: Schema.Types.ObjectId,
       ref : "User",
-      required: true
+      default: null
+    },
+    toPhone: {
+      type: String
     },
     transactionType: {
       type: String,
@@ -31,7 +34,6 @@ const transactionSchema = new Schema<ITransaction>(
     },
     userCharge : {
       type: Number,
-      required: true,
     },
     agentComission: {
       type: Number,

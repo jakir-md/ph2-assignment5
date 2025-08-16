@@ -26,4 +26,10 @@ router.post(
   WalletControllers.cashOut
 );
 
+router.post(
+  "/send-money",
+  checkAuth(Role.USER, Role.AGENT),
+  WalletControllers.sendMoney
+);
+
 export const WalletRoutes = router;

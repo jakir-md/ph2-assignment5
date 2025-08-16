@@ -21,6 +21,9 @@ const walletSchema = new Schema<IWallet>(
       type: String,
       required: true,
     },
+    totalComission: {
+      type: Number,
+    },
   },
   {
     timestamps: true,

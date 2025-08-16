@@ -5,14 +5,17 @@ import cors from "cors";
 import { EnvVars } from "./app/config/env";
 import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import notFound from "./app/middleware/notFoundHandler";
+import { router } from "./app/routes";
 
 const app = express();
 
-app.use(expressSession({
+app.use(
+  expressSession({
     secret: EnvVars.EXPRESS_SESSION_SECRET,
     resave: false,
-    saveUninitialized: false
-}));
+    saveUninitialized: false,
+  })
+);
 
 app.use(express.json());
 app.use(cookieParser());
@@ -24,15 +27,15 @@ app.use(
 );
 app.use(urlencoded({ extended: true }));
 
+app.use("/api/v1", router);
+
 app.get("/", (req: Request, res: Response) => {
   res.status(200).json({
     message: "Welcome to digiWallet.",
   });
 });
 
-
 app.use(globalErrorHandler);
 app.use(notFound);
-
 
 export default app;

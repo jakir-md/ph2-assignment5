@@ -14,4 +14,5 @@ export interface IWallet {
   status: WalletStatus;
   isVerified?: boolean;
   phone: string;
+  totalComission: number;
 }

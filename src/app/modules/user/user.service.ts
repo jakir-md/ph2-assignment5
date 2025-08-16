@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { EnvVars } from "../../config/env";
 import { WalletServices } from "../wallet/wallet.service";
 import { JwtPayload } from "jsonwebtoken";
+import { Wallet } from "../wallet/wallet.model";
 
 const registerUser = async (payload: Partial<IUser>) => {
   const { phone, password } = payload;
@@ -24,19 +25,24 @@ const registerUser = async (payload: Partial<IUser>) => {
   session.startTransaction();
 
   try {
-    let user = await User.create(payload);
-    if (payload.role === (Role.USER || Role.AGENT)) {
-      const wallet = await WalletServices.createWallet(user._id);
+    let user = await User.create([{ ...payload }], { session });
+    if (payload.role === Role.USER || payload.role === Role.AGENT) {
+      const wallet = await Wallet.create(
+        [{ userId: user[0]._id, phone: user[0].phone }],
+        {
+          session,
+        }
+      );
       const updatedUser = await User.findByIdAndUpdate(
-        user._id,
-        { walletId: wallet._id },
+        user[0]._id,
+        { walletId: wallet[0]._id },
         { runValidators: true, new: true, session }
       );
       user = updatedUser;
     }
-    const total = await User.countDocuments();
 
     await session.commitTransaction();
+    const total = await User.countDocuments();
 
     return { user, total };
   } catch (error) {

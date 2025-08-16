@@ -6,6 +6,7 @@ export enum TransactionType {
   USER_CASH_OUT = "USER_CASH_OUT",
   USER_SEND_MONEY = "USER_SEND_MONEY",
   AGENT_SELF_CASH_IN = "AGENT_SELF_CASH_IN",
+  AGENT_SEND_MONEY = "AGENT_SEND_MONEY",
   AGENT_CASH_OUT_COMISSION = "AGENT_CASH_OUT_COMISSION",
   ADMIN_CASH_OUT_COMISSION = "ADMIN_CASH_OUT_COMISSION",
 }
@@ -22,6 +23,7 @@ export interface ITransaction {
   status: TransactionStatus;
   fromId: Types.ObjectId;
   toId: Types.ObjectId;
+  toPhone: string;
   transactionType: TransactionType;
   amount: number;
   userCharge: number;
