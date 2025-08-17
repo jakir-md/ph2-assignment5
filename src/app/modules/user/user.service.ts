@@ -113,7 +113,7 @@ const verifyWithKYC = async (
     );
   }
 
-  const isUserExits = await User.findById(userId);
+  const isUserExits = await User.findById(userId).lean();
   if (!isUserExits) {
     throw new AppError(StatusCodes.BAD_REQUEST, "User Not Found.");
   }
@@ -130,17 +130,38 @@ const verifyWithKYC = async (
   }
 
   if (
-    isUserExits.userNID === null ||
-    isUserExits.nomineeNID === null ||
+    "userNID" in isUserExits ||
+    "nomineeNID" in isUserExits ||
     isUserExits.nomineeName === null ||
     isUserExits.address === null ||
     isUserExits.picture === null
   ) {
-    await User.findByIdAndUpdate(
+    if (payload.userNID) {
+      const isUserNIDExists = await User.findOne({ userNID: payload.userNID });
+
+      if (isUserNIDExists) {
+        throw new AppError(StatusCodes.BAD_REQUEST, "User NID Already Exists.");
+      }
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { ...payload, isVerified: true },
+      { ...payload },
       { runValidators: true, new: true }
     );
+
+    if (
+      updatedUser?.userNID !== null &&
+      updatedUser?.nomineeNID !== null &&
+      updatedUser?.picture !== null &&
+      updatedUser?.address !== null &&
+      updatedUser?.nomineeName !== null
+    ) {
+      updatedUser.isVerified = true;
+      await updatedUser.save();
+
+      return true;
+    }
   } else {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
@@ -175,6 +196,7 @@ const getUsersAndWallet = async () => {
         "walletInfo._id": 1,
         "walletInfo.balance": 1,
         "walletInfo.status": 1,
+        "walletInfo.totalComission":1,
         "walletInfo.createdAt": 1,
       },
     },

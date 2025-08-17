@@ -43,12 +43,20 @@ const verifyWithKYC = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const decodedToken = req.user;
     const userId = req.params.id;
-    await UserServices.verifyWithKYC(decodedToken, userId, req.body);
+    const result = await UserServices.verifyWithKYC(
+      decodedToken,
+      userId,
+      req.body
+    );
     sendResponse(res, {
       data: null,
       success: true,
       statusCode: StatusCodes.OK,
-      message: "User is verified successfully.",
+      message: `${
+        result === true
+          ? "User is verified successfully"
+          : "KYC Updated. But User not verified"
+      } .`,
     });
   }
 );

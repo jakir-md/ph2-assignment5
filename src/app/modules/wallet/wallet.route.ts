@@ -39,7 +39,7 @@ router.post(
 );
 
 router.patch(
-  "/update-status/:id",
+  "/update-status/:phone",
   checkAuth(...Object.values(Role)),
   WalletControllers.updateStatus
 );

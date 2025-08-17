@@ -63,7 +63,7 @@ const addMoney = async (
   session.startTransaction();
 
   try {
-    await Wallet.findOneAndUpdate(
+    const updatedWallet = await Wallet.findOneAndUpdate(
       { phone },
       {
         $inc: { balance: amount },
@@ -86,7 +86,11 @@ const addMoney = async (
     });
 
     await session.commitTransaction();
-    return { transactionId: newTransaction.transactionId, amount: amount };
+    return {
+      transactionId: newTransaction.transactionId,
+      amount: amount,
+      totalBalance: updatedWallet.balance,
+    };
   } catch (error) {
     await session.abortTransaction();
     throw error;
@@ -204,11 +208,12 @@ const sendMoney = async (
     );
   }
 
-  const sendMoneyChargeAmount =
+  let sendMoneyChargeAmount =
     amount *
     (isUserExists.role === Role.USER
       ? systemParameter.userSendMoneyCharge
       : systemParameter.agentSendMoneyCharge);
+  sendMoneyChargeAmount = parseFloat(sendMoneyChargeAmount.toFixed(4));
 
   if (userWallet.balance - sendMoneyChargeAmount - amount < 0) {
     throw new AppError(StatusCodes.BAD_REQUEST, "Insufficient Amount.");
@@ -313,10 +318,14 @@ const cashOut = async (phone: string, amount: number, agentPhone: string) => {
     );
   }
 
-  const cashOutChargeAmount = amount * systemParameter.userCashOutCharge;
-  const userNewBalance = userWallet.balance - cashOutChargeAmount - amount;
-  const adminMarginAmount = amount * systemParameter.adminCashOutMargin;
-  const agentComissionAmount = cashOutChargeAmount - adminMarginAmount;
+  let cashOutChargeAmount = amount * systemParameter.userCashOutCharge;
+  cashOutChargeAmount = parseFloat(cashOutChargeAmount.toFixed(4));
+  let userNewBalance = userWallet.balance - cashOutChargeAmount - amount;
+  userNewBalance = parseFloat(userNewBalance.toFixed(4));
+  let adminMarginAmount = amount * systemParameter.adminCashOutMargin;
+  adminMarginAmount = parseFloat(adminMarginAmount.toFixed(4));
+  let agentComissionAmount = cashOutChargeAmount - adminMarginAmount;
+  agentComissionAmount = parseFloat(agentComissionAmount.toFixed(4));
 
   if (userNewBalance < 0) {
     throw new AppError(StatusCodes.FORBIDDEN, "Insufficient balance.");
@@ -409,16 +418,16 @@ const cashOut = async (phone: string, amount: number, agentPhone: string) => {
 
 const updateStatus = async (
   decodedToken: JwtPayload,
-  userId: string,
+  phone: string,
   newStatus: WalletStatus
 ) => {
   if (decodedToken.role !== Role.ADMIN) {
-    if (decodedToken.userId !== userId) {
+    if (decodedToken.phone !== phone) {
       throw new AppError(StatusCodes.FORBIDDEN, "You are not authorized.");
     }
   }
 
-  const wallet = await Wallet.findOne({ userId });
+  const wallet = await Wallet.findOne({ phone });
 
   if (!wallet) {
     throw new AppError(StatusCodes.BAD_REQUEST, "Wallet Not Found.");
@@ -441,10 +450,10 @@ const updateStatus = async (
   return wallet;
 };
 
-const allWallets = async() => {
+const allWallets = async () => {
   const wallets = await Wallet.find({});
   return wallets;
-}
+};
 
 export const WalletServices = {
   getBalance,
@@ -453,5 +462,5 @@ export const WalletServices = {
   addMoneyByAgent,
   sendMoney,
   updateStatus,
-  allWallets
+  allWallets,
 };

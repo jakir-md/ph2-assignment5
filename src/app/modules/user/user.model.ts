@@ -59,17 +59,15 @@ const userSchema = new Schema<IUser>(
     },
     nomineeName: {
       type: String,
-      default: null,
+      default: null
     },
     nomineeNID: {
       type: String,
-      default: null,
-      unique: true,
+      default: null
     },
     userNID: {
       type: String,
-      default: null,
-      unique: true
+      default: null
     },
   },
   {
@@ -77,10 +75,5 @@ const userSchema = new Schema<IUser>(
     versionKey: false,
   }
 );
-userSchema.pre("findOneAndUpdate", async function () {
-  const user = this.getUpdate() as Partial<IUser>;
-  console.log("user", user);
-  console.log("jakir");
-});
 
 export const User = model<IUser>("User", userSchema);

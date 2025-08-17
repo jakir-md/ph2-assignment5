@@ -65,12 +65,12 @@ const cashOut = catchAsync(
 
 const updateStatus = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const userId = req.params.id;
+    const phone = req.params.phone;
     const decodedToken = req.user;
     const { status } = req.body;
     const result = await WalletServices.updateStatus(
       decodedToken,
-      userId,
+      phone,
       status
     );
     sendResponse(res, {
@@ -96,7 +96,7 @@ const addMoneyByAgent = catchAsync(
       data: result,
       success: true,
       statusCode: StatusCodes.OK,
-      message: "Status Updated successfully.",
+      message: "Cash In successfully.",
     });
   }
 );

@@ -3,7 +3,7 @@ import { Role, ISActive } from "./user.interface";
 
 export const createUserZodSchema = z.object({
   name: z.object({
-    firstName: z.string({ required_error: "Frist Name is required." }).min(1),
+    firstName: z.string({ required_error: "First Name is required." }).min(1),
     lastName: z.string().optional(),
   }),
   email: z
@@ -25,23 +25,6 @@ export const createUserZodSchema = z.object({
   picture: z.string().optional(),
   address: z.string().optional(),
   role: z.enum(Object.values(Role) as [string]).default(Role.USER),
-  isActive: z
-    .enum(Object.values(ISActive) as [string])
-    .default(ISActive.ACTIVE),
-  isDeleted: z.boolean().default(false),
-  isVerified: z.boolean().default(true),
-  walletId: z
-    .string()
-    .regex(/^[0-9a-fA-F]{24}$/, "Invalid ObjectId")
-    .optional(),
-  nomineeName: z
-    .object({
-      firstName: z.string({ required_error: "First Name is required." }).min(1),
-      lastName: z.string().optional(),
-    })
-    .optional(),
-  nomineeNID: z.string().nullable().optional(),
-  userNID: z.string().nullable().optional(),
 });
 
 export const updateUserZodSchema = z.object({
@@ -54,11 +37,6 @@ export const updateUserZodSchema = z.object({
   address: z.string().optional(),
   isActive: z.enum(Object.values(ISActive) as [string]).optional(),
   isDeleted: z.boolean().optional(),
-  nomineeName: z
-    .string({ required_error: "Nominee First Name is required." })
-    .min(1)
-    .nullable()
-    .optional(),
   password: z
     .string({ required_error: "Password is required" })
     .min(8)

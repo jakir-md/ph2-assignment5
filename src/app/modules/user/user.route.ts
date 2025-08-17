@@ -26,12 +26,10 @@ router.patch(
   UserControllers.updateUserInfo
 );
 
-
 router.get(
   "/all-users-with-wallet",
   checkAuth(Role.ADMIN),
   UserControllers.getUsersAndWallet
 );
-
 
 export const UserRoutes = router;
