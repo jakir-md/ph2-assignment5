@@ -1,10 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { StatusCodes } from "http-status-codes";
 import AppError from "../../errorHelper/AppError";
 import { ISActive, IUser, Role } from "./user.interface";
 import { User } from "./user.model";
 import bcrypt from "bcryptjs";
 import { EnvVars } from "../../config/env";
-import { WalletServices } from "../wallet/wallet.service";
 import { JwtPayload } from "jsonwebtoken";
 import { Wallet } from "../wallet/wallet.model";
 
@@ -53,36 +53,6 @@ const registerUser = async (payload: Partial<IUser>) => {
   }
 };
 
-const verifyUser = async (userId: string) => {
-  const isUserExits = await User.findById(userId);
-  if (!isUserExits) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "User Not Found.");
-  }
-
-  if (isUserExits.walletId === null) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "User Wallet Not Found.");
-  }
-  if (
-    isUserExits.userNID === null ||
-    isUserExits.nomineeNID === null ||
-    isUserExits.nomineeName === null ||
-    isUserExits.address === null ||
-    isUserExits.isDeleted === true ||
-    isUserExits.isActive === ISActive.INACTIVE
-  ) {
-    throw new AppError(
-      StatusCodes.FORBIDDEN,
-      "Update Profile info for verification."
-    );
-  }
-
-  isUserExits.isVerified = true;
-  await isUserExits.save();
-
-  await WalletServices.verifyWallet(isUserExits._id);
-  return isUserExits;
-};
-
 const updateUserInfo = async (
   payload: Partial<IUser>,
   decodedToken: JwtPayload,
@@ -109,28 +79,115 @@ const updateUserInfo = async (
 
   if (decodedToken.role !== Role.ADMIN) {
     if (
-      payload.isVerified ||
-      !payload.isVerified ||
-      payload.isDeleted ||
-      !payload.isDeleted ||
-      payload.isActive
+      "isVerified" in payload ||
+      "isDeleted" in payload ||
+      "isActive" in payload
     ) {
       throw new AppError(
         StatusCodes.FORBIDDEN,
-        "You are not authorized to update the content."
+        "You are not authorized to update the to content."
       );
     }
   }
 
-  const updatedUser = await User.findByIdAndUpdate(userId, payload, {
+  const updatedUser = await User.findOneAndUpdate({ _id: userId }, payload, {
     runValidators: true,
     new: true,
   });
 
-  return updatedUser;
+  const { password, ...rest } = updatedUser.toObject();
+
+  return rest;
 };
+
+const verifyWithKYC = async (
+  decodedToken: JwtPayload,
+  userId: string,
+  payload: Partial<IUser>
+) => {
+  //checking whether one is trying to update others info except admin
+  if (userId !== decodedToken.userId) {
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      "You are not authorized to update the content."
+    );
+  }
+
+  const isUserExits = await User.findById(userId);
+  if (!isUserExits) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "User Not Found.");
+  }
+
+  if (isUserExits.walletId === null) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "User Wallet Not Found.");
+  }
+
+  if (isUserExits.isDeleted || isUserExits.isActive === ISActive.INACTIVE) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "Cannot perform KYC. User is deleted or INACTIVE."
+    );
+  }
+
+  if (
+    isUserExits.userNID === null ||
+    isUserExits.nomineeNID === null ||
+    isUserExits.nomineeName === null ||
+    isUserExits.address === null ||
+    isUserExits.picture === null
+  ) {
+    await User.findByIdAndUpdate(
+      userId,
+      { ...payload, isVerified: true },
+      { runValidators: true, new: true }
+    );
+  } else {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "You cannot reset your KYC information."
+    );
+  }
+};
+
+const getUsersAndWallet = async () => {
+  const usersWithWallet = await User.aggregate([
+    {
+      $lookup: {
+        from: "wallets",
+        localField: "walletId",
+        foreignField: "_id",
+        as: "walletInfo",
+      },
+    },
+    {
+      $unwind: { path: "$walletInfo", preserveNullAndEmptyArrays: true },
+    },
+    {
+      $project: {
+        name: 1,
+        phone: 1,
+        isVerified: 1,
+        isDeleted: 1,
+        isActive: 1,
+        role: 1,
+        address: 1,
+        createdAt: 1,
+        "walletInfo._id": 1,
+        "walletInfo.balance": 1,
+        "walletInfo.status": 1,
+        "walletInfo.createdAt": 1,
+      },
+    },
+    {
+      $limit: 10,
+    },
+  ]);
+  return usersWithWallet;
+};
+
 export const UserServices = {
   registerUser,
-  verifyUser,
   updateUserInfo,
+  verifyWithKYC,
+  getUsersAndWallet,
 };

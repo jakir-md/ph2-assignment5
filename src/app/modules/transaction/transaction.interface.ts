@@ -3,6 +3,7 @@ import { Role } from "../user/user.interface";
 
 export enum TransactionType {
   USER_CASH_IN = "USER_CASH_IN",
+  USER_CASH_IN_BY_AGENT = "USER_CASH_IN_BY_AGENT",
   USER_CASH_OUT = "USER_CASH_OUT",
   USER_SEND_MONEY = "USER_SEND_MONEY",
   AGENT_SELF_CASH_IN = "AGENT_SELF_CASH_IN",

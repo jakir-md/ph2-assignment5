@@ -12,6 +12,7 @@ import {
   TransactionType,
 } from "../transaction/transaction.interface";
 import { getTransactionId } from "../../utils/getTransactionId";
+import { JwtPayload } from "jsonwebtoken";
 
 const getBalance = async (phone: string) => {
   const isWalletExists = await Wallet.findOne({ phone });
@@ -20,7 +21,7 @@ const getBalance = async (phone: string) => {
   }
 
   if (
-    isWalletExists.status === (WalletStatus.BLOCKED || WalletStatus.SUSPENDED)
+    isWalletExists.status === (WalletStatus.BLOCKED || WalletStatus.INACTIVE)
   ) {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
@@ -31,18 +32,70 @@ const getBalance = async (phone: string) => {
   return isWalletExists.balance;
 };
 
-const addMoney = async (phone: string, amount: number) => {
-  const isWalletExists = await Wallet.findOne({ phone });
+const addMoney = async (
+  decodedToken: JwtPayload,
+  phone: string,
+  amount: number
+) => {
+  if (decodedToken.phone !== phone) {
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      "You are not authorized to add money."
+    );
+  }
+
+  const isWalletExists = await Wallet.findOne({ phone }).populate("userId");
   if (!isWalletExists) {
     throw new AppError(StatusCodes.BAD_REQUEST, "Wallet Doesn't Exists.");
   }
 
-  isWalletExists.balance = isWalletExists.balance + amount;
-  await isWalletExists.save();
-  return isWalletExists.balance;
+  if (
+    isWalletExists.status === WalletStatus.BLOCKED ||
+    isWalletExists.status === WalletStatus.INACTIVE
+  ) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      `User Wallet is ${isWalletExists.status}.`
+    );
+  }
+
+  const session = await Wallet.startSession();
+  session.startTransaction();
+
+  try {
+    await Wallet.findOneAndUpdate(
+      { phone },
+      {
+        $inc: { balance: amount },
+      },
+      { runValidators: true, new: true, session }
+    );
+
+    const newTransaction = await Transaction.create({
+      transactionId: getTransactionId(),
+      fromId: null,
+      toId: isWalletExists.userId,
+      amount: amount,
+      systemRevenue: 0,
+      role: isWalletExists.userId.role,
+      status: TransactionStatus.COMPLETED,
+      transactionType:
+        isWalletExists.userId.role === Role.AGENT
+          ? TransactionType.AGENT_SELF_CASH_IN
+          : TransactionType.USER_CASH_IN,
+    });
+
+    await session.commitTransaction();
+    return { transactionId: newTransaction.transactionId, amount: amount };
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    await session.endSession();
+  }
 };
 
-const cashInByAgent = async (
+const addMoneyByAgent = async (
   phone: string,
   receiverPhone: string,
   amount: number
@@ -105,7 +158,7 @@ const cashInByAgent = async (
       systemRevenue: -agentComission,
       role: Role.AGENT,
       status: TransactionStatus.COMPLETED,
-      transactionType: TransactionType.USER_CASH_IN,
+      transactionType: TransactionType.USER_CASH_IN_BY_AGENT,
     });
 
     await session.commitTransaction();
@@ -117,6 +170,7 @@ const cashInByAgent = async (
     await session.endSession();
   }
 };
+
 const sendMoney = async (
   phone: string,
   receiverPhone: string,
@@ -353,10 +407,51 @@ const cashOut = async (phone: string, amount: number, agentPhone: string) => {
   }
 };
 
+const updateStatus = async (
+  decodedToken: JwtPayload,
+  userId: string,
+  newStatus: WalletStatus
+) => {
+  if (decodedToken.role !== Role.ADMIN) {
+    if (decodedToken.userId !== userId) {
+      throw new AppError(StatusCodes.FORBIDDEN, "You are not authorized.");
+    }
+  }
+
+  const wallet = await Wallet.findOne({ userId });
+
+  if (!wallet) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Wallet Not Found.");
+  }
+
+  if (
+    wallet.status === WalletStatus.BLOCKED ||
+    newStatus === WalletStatus.BLOCKED
+  ) {
+    if (decodedToken.role !== Role.ADMIN) {
+      throw new AppError(
+        StatusCodes.FORBIDDEN,
+        "You are not authorized to change status."
+      );
+    }
+  }
+
+  wallet.status = newStatus;
+  await wallet.save();
+  return wallet;
+};
+
+const allWallets = async() => {
+  const wallets = await Wallet.find({});
+  return wallets;
+}
+
 export const WalletServices = {
   getBalance,
   addMoney,
   cashOut,
-  cashInByAgent,
+  addMoneyByAgent,
   sendMoney,
+  updateStatus,
+  allWallets
 };

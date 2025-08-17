@@ -17,7 +17,7 @@ const transactionSchema = new Schema<ITransaction>(
     fromId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      default: null
     },
     toId: {
       type: Schema.Types.ObjectId,

@@ -28,7 +28,7 @@ export const checkAuth =
         throw new AppError(StatusCodes.BAD_REQUEST, "User Not Found.");
       }
 
-      if (isUserExists.isActive === (ISActive.BLOCKED || ISActive.INACTIVE)) {
+      if (isUserExists.isActive === (ISActive.BLOCKED || ISActive.SUSPENDED)) {
         throw new AppError(
           StatusCodes.BAD_REQUEST,
           `User is ${isUserExists.isActive}`

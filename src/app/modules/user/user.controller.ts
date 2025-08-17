@@ -20,25 +20,16 @@ const registerUser = catchAsync(
   }
 );
 
-const verifyUser = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const {userId} = req.body;
-    const result = await UserServices.verifyUser(userId);
-    sendResponse(res, {
-      data: result,
-      success: true,
-      statusCode: StatusCodes.OK,
-      message: "User Verified Successfully.",
-    });
-  }
-);
-
 const updateUserInfo = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.params.userId;
     const decodedToken = req.user;
     const payload = req.body;
-    const result = await UserServices.updateUserInfo(payload, decodedToken, userId);
+    const result = await UserServices.updateUserInfo(
+      payload,
+      decodedToken,
+      userId
+    );
     sendResponse(res, {
       data: result,
       success: true,
@@ -48,8 +39,35 @@ const updateUserInfo = catchAsync(
   }
 );
 
+const verifyWithKYC = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const decodedToken = req.user;
+    const userId = req.params.id;
+    await UserServices.verifyWithKYC(decodedToken, userId, req.body);
+    sendResponse(res, {
+      data: null,
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "User is verified successfully.",
+    });
+  }
+);
+
+const getUsersAndWallet = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const result = await UserServices.getUsersAndWallet();
+    sendResponse(res, {
+      data: result,
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Users with wallet info retrieved successfully.",
+    });
+  }
+);
+
 export const UserControllers = {
   registerUser,
-  verifyUser,
-  updateUserInfo
+  updateUserInfo,
+  getUsersAndWallet,
+  verifyWithKYC,
 };

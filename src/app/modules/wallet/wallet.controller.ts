@@ -20,9 +20,10 @@ const getBalance = catchAsync(
 
 const addMoney = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { phone } = req.user;
+    const decodedToken = req.user;
     const { amount } = req.body;
-    const result = await WalletServices.addMoney(phone, amount);
+    const phone = req.params.phone;
+    const result = await WalletServices.addMoney(decodedToken, phone, amount);
     sendResponse(res, {
       data: result,
       success: true,
@@ -62,9 +63,62 @@ const cashOut = catchAsync(
   }
 );
 
+const updateStatus = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.params.id;
+    const decodedToken = req.user;
+    const { status } = req.body;
+    const result = await WalletServices.updateStatus(
+      decodedToken,
+      userId,
+      status
+    );
+    sendResponse(res, {
+      data: result,
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Status Updated successfully.",
+    });
+  }
+);
+
+const addMoneyByAgent = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const receiverPhone = req.params.phone;
+    const { phone } = req.user;
+    const { amount } = req.body;
+    const result = await WalletServices.addMoneyByAgent(
+      phone,
+      receiverPhone,
+      amount
+    );
+    sendResponse(res, {
+      data: result,
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Status Updated successfully.",
+    });
+  }
+);
+
+const allWallets = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const result = await WalletServices.allWallets();
+    sendResponse(res, {
+      data: result,
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "All Wallets retrieved successfully.",
+    });
+  }
+);
+
 export const WalletControllers = {
   getBalance,
   addMoney,
   cashOut,
-  sendMoney
+  sendMoney,
+  updateStatus,
+  addMoneyByAgent,
+  allWallets,
 };

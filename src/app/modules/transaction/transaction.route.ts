@@ -15,4 +15,10 @@ router.post(
   checkAuth(Role.AGENT),
   TransactionControllers.viewAgentHistory
 );
+
+router.get(
+  "/transaction-history",
+  checkAuth(Role.ADMIN),
+  TransactionControllers.allTransactions
+);
 export const TransactionRoutes = router;

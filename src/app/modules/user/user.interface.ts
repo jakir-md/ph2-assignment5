@@ -9,7 +9,8 @@ export enum Role {
 export enum ISActive {
     ACTIVE="ACTIVE",
     BLOCKED="BLOCKED",
-    INACTIVE="INACTIVE"
+    INACTIVE="INACTIVE",
+    SUSPENDED="SUSPENDED"
 }
 
 export interface IUser {

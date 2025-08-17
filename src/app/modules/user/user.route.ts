@@ -1,6 +1,6 @@
 import express from "express";
 import { validateRequest } from "../../middleware/validateRequest";
-import { createUserZodSchema, updateUserZodSchema } from "./user.validation";
+import { createUserZodSchema, updateUserZodSchema, verifyWithKYCZodSchema } from "./user.validation";
 import { UserControllers } from "./user.controller";
 import { checkAuth } from "../../middleware/checkAuth";
 import { Role } from "./user.interface";
@@ -12,12 +12,12 @@ router.post(
   UserControllers.registerUser
 );
 
-router.get(
-  "/verfify",
+router.patch(
+  "/verify-with-kyc/:id",
+  validateRequest(verifyWithKYCZodSchema),
   checkAuth(...Object.values(Role)),
-  UserControllers.verifyUser
+  UserControllers.verifyWithKYC
 );
-
 
 router.patch(
   "/:userId",
@@ -25,4 +25,14 @@ router.patch(
   checkAuth(...Object.values(Role)),
   UserControllers.updateUserInfo
 );
+
+//admin routes
+//get specific user
+router.get(
+  "/all-users-with-wallet",
+  checkAuth(Role.ADMIN),
+  UserControllers.getUsersAndWallet
+);
+
+
 export const UserRoutes = router;

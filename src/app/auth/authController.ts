@@ -66,6 +66,7 @@ const getAccessToken = catchAsync(
     });
   }
 );
+
 export const AuthControllers = {
   loginUser,
   logOut,

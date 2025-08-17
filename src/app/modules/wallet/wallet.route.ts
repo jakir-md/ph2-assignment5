@@ -13,10 +13,16 @@ router.get(
 );
 
 router.post(
-  "/add-money",
+  "/add-money/:phone",
   validateRequest(addMoneyZodSchema),
   checkAuth(Role.USER, Role.AGENT),
   WalletControllers.addMoney
+);
+
+router.post(
+  "/add-money-by-agent/:phone",
+  checkAuth(Role.AGENT),
+  WalletControllers.addMoneyByAgent
 );
 
 router.post(
@@ -32,4 +38,11 @@ router.post(
   WalletControllers.sendMoney
 );
 
+router.patch(
+  "/update-status/:id",
+  checkAuth(...Object.values(Role)),
+  WalletControllers.updateStatus
+);
+
+router.get("/all-wallets", checkAuth(Role.ADMIN), WalletControllers.allWallets);
 export const WalletRoutes = router;

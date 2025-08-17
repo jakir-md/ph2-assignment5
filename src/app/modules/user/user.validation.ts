@@ -51,19 +51,36 @@ export const updateUserZodSchema = z.object({
       lastName: z.string().min(1).optional(),
     })
     .optional(),
-  picture: z.string().optional(),
   address: z.string().optional(),
-  role: z.enum(Object.values(Role) as [string]).optional(),
   isActive: z.enum(Object.values(ISActive) as [string]).optional(),
   isDeleted: z.boolean().optional(),
-  isVerified: z.boolean().optional(),
   nomineeName: z
-    .object({
-      firstName: z.string({ required_error: "Nominee First Name is required." }).min(1),
-      lastName: z.string().optional(),
-    })
+    .string({ required_error: "Nominee First Name is required." })
+    .min(1)
     .nullable()
     .optional(),
-  nomineeNID: z.string().optional(),
-  userNID: z.string().optional(),
+  password: z
+    .string({ required_error: "Password is required" })
+    .min(8)
+    .regex(/^(?=.*[A-Z])/, { message: "At least one uppercase" })
+    .regex(/^(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/, {
+      message: "At least one special character",
+    })
+    .regex(/(?=.*\d)/, { message: "At least one number" }),
+});
+
+export const verifyWithKYCZodSchema = z.object({
+  nomineeName: z
+    .string({ required_error: "Nominee First Name is required." })
+    .min(1),
+  nomineeNID: z
+    .string({ required_error: "Nominee NID is required." })
+    .min(10)
+    .max(10),
+  userNID: z
+    .string({ required_error: "User NID is required." })
+    .min(10)
+    .max(10),
+  picture: z.string({ required_error: "User photo is required." }),
+  address: z.string({ required_error: "User address is required." }),
 });

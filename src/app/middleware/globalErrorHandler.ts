@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { EnvVars } from "../config/env";
 import { handleDuplicateError } from "../helper/handleDuplicateError";
 import { handleCastError } from "../helper/handleCastError";
@@ -8,7 +9,8 @@ import { handleZodError } from "../helper/handleZodError";
 export const globalErrorHandler = async (
   error: any,
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   let statusCode = 500;
   let message = `Something Went Wrong. ${error.message}`;

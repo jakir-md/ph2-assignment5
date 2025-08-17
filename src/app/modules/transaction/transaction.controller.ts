@@ -31,7 +31,20 @@ const viewAgentHistory = catchAsync(
   }
 );
 
+const allTransactions = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const result = await TransactionServices.allTransactions();
+    sendResponse(res, {
+      data: result,
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Transaction History retrieved successfully.",
+    });
+  }
+);
+
 export const TransactionControllers = {
   viewUserHistory,
-  viewAgentHistory
+  viewAgentHistory,
+  allTransactions,
 };
