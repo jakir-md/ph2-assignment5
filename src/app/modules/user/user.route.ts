@@ -26,8 +26,7 @@ router.patch(
   UserControllers.updateUserInfo
 );
 
-//admin routes
-//get specific user
+
 router.get(
   "/all-users-with-wallet",
   checkAuth(Role.ADMIN),
