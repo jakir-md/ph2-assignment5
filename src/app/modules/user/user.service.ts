@@ -90,6 +90,13 @@ const updateUserInfo = async (
     }
   }
 
+  if (payload.password) {
+    payload.password = await bcrypt.hash(
+      payload.password,
+      Number(EnvVars.BCRYPT_SALT_ROUND)
+    );
+  }
+
   const updatedUser = await User.findOneAndUpdate({ _id: userId }, payload, {
     runValidators: true,
     new: true,
@@ -196,7 +203,7 @@ const getUsersAndWallet = async () => {
         "walletInfo._id": 1,
         "walletInfo.balance": 1,
         "walletInfo.status": 1,
-        "walletInfo.totalComission":1,
+        "walletInfo.totalComission": 1,
         "walletInfo.createdAt": 1,
       },
     },

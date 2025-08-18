@@ -27,6 +27,7 @@ export const createUserZodSchema = z.object({
   role: z.enum(Object.values(Role) as [string]).default(Role.USER),
 });
 
+//neither ADMIN nor USER can change the isVerified field. It'll be only updated automatically if KYC is completed successfully
 export const updateUserZodSchema = z.object({
   name: z
     .object({
@@ -44,7 +45,8 @@ export const updateUserZodSchema = z.object({
     .regex(/^(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/, {
       message: "At least one special character",
     })
-    .regex(/(?=.*\d)/, { message: "At least one number" }),
+    .regex(/(?=.*\d)/, { message: "At least one number" })
+    .optional(),
 });
 
 export const verifyWithKYCZodSchema = z.object({

@@ -5,6 +5,7 @@ import { EnvVars } from "../config/env";
 import { handleDuplicateError } from "../helper/handleDuplicateError";
 import { handleCastError } from "../helper/handleCastError";
 import { handleZodError } from "../helper/handleZodError";
+import AppError from "../errorHelper/AppError";
 
 export const globalErrorHandler = async (
   error: any,
@@ -32,6 +33,9 @@ export const globalErrorHandler = async (
     statusCode = simplifiedError.statusCode;
     message = simplifiedError.message;
     errorSources = simplifiedError.errorSources;
+  } else if (error instanceof AppError) {
+    statusCode = error.statusCode;
+    message = error.message;
   } else {
     statusCode = 500;
     message = error.message;
