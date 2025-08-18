@@ -23,7 +23,6 @@ export const checkAuth =
 
       const isUserExists = await User.findOne({ phone: decodedToken.phone });
 
-      console.log(isUserExists);
       if (!isUserExists) {
         throw new AppError(StatusCodes.BAD_REQUEST, "User Not Found.");
       }

@@ -1,7 +1,7 @@
 # DigiWallet
 
 **DigiWallet** is a digital wallet service that facilitates transactions in our day-to-day life.  
-There are three roles in the system: **USER, ADMIN, and AGENT**.
+There are three roles in the system: **USER, ADMIN, and AGENT**. The core features are listed below:
 
 ---
 
@@ -83,7 +83,7 @@ There are three roles in the system: **USER, ADMIN, and AGENT**.
        **POST** `/api/v1/wallet/cash-out` `Protected (USER)`
   - 5. #### Send Money
        **POST** `/api/v1/wallet/send-money` `Protected (USER, AGENT)`
-  - 6. #### Add Money
+  - 6. #### Add Money 
        **POST** `/api/v1/wallet/add-money/:phone` `Protected (USER, AGENT)`
   - 7. #### Update Wallet Status
        **PATCH** `/api/v1/wallet/update-status/:id` `Protected (USER, AGENT, ADMIN)`

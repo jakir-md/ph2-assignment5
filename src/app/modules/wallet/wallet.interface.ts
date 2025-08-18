@@ -1,4 +1,5 @@
 import { Types } from "mongoose";
+import { IUser } from "../user/user.interface";
 
 export enum WalletStatus {
   ACTIVE = "ACTIVE",
@@ -8,7 +9,7 @@ export enum WalletStatus {
 
 export interface IWallet {
   _id?: string;
-  userId: Types.ObjectId;
+  userId: Types.ObjectId | IUser;
   balance: number;
   status: WalletStatus;
   isVerified?: boolean;

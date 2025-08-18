@@ -22,3 +22,57 @@ const connectDb = async () => {
 (async () => {
   await connectDb();
 })();
+
+process.on("unhandledRejection", (error) => {
+  console.log(
+    "Unhandled rejection error detected. Server is shutting down...",
+    error
+  );
+
+  if (server) {
+    server.close(() => {
+      process.exit(1);
+    });
+  }
+
+  process.exit(1);
+});
+
+process.on("uncaughtException", (error) => {
+  console.log(
+    "uncaught exception error detected. Server is shutting down...",
+    error
+  );
+
+  if (server) {
+    server.close(() => {
+      process.exit(1);
+    });
+  }
+
+  process.exit(1);
+});
+
+process.on("SIGTERM", () => {
+  console.log("SIGTERM signal found. Server is shutting down...");
+
+  if (server) {
+    server.close(() => {
+      process.exit(1);
+    });
+  }
+
+  process.exit(1);
+});
+
+process.on("SIGINT", () => {
+  console.log("SIGINT signal found. Server is shutting down...");
+
+  if (server) {
+    server.close(() => {
+      process.exit(1);
+    });
+  }
+
+  process.exit(1);
+});

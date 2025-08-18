@@ -25,7 +25,8 @@ const registerUser = async (payload: Partial<IUser>) => {
   session.startTransaction();
 
   try {
-    let user = await User.create([{ ...payload }], { session });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let user: any = await User.create([{ ...payload }], { session });
     if (payload.role === Role.USER || payload.role === Role.AGENT) {
       const wallet = await Wallet.create(
         [{ userId: user[0]._id, phone: user[0].phone }],
@@ -44,7 +45,8 @@ const registerUser = async (payload: Partial<IUser>) => {
     await session.commitTransaction();
     const total = await User.countDocuments();
 
-    return { user, total };
+    const { password, ...rest } = user.toObject();
+    return { rest, total };
   } catch (error) {
     await session.abortTransaction();
     throw error;
@@ -100,7 +102,7 @@ const updateUserInfo = async (
   const updatedUser = await User.findOneAndUpdate({ _id: userId }, payload, {
     runValidators: true,
     new: true,
-  });
+  }).orFail();
 
   const { password, ...rest } = updatedUser.toObject();
 
@@ -155,7 +157,7 @@ const verifyWithKYC = async (
       userId,
       { ...payload },
       { runValidators: true, new: true }
-    );
+    ).orFail();
 
     if (
       updatedUser?.userNID !== null &&

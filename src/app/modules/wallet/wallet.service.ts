@@ -45,8 +45,14 @@ const addMoney = async (
   }
 
   const isWalletExists = await Wallet.findOne({ phone }).populate("userId");
+
   if (!isWalletExists) {
     throw new AppError(StatusCodes.BAD_REQUEST, "Wallet Doesn't Exists.");
+  }
+
+  let role = "";
+  if ("role" in isWalletExists.userId) {
+    role = isWalletExists.userId.role;
   }
 
   if (
@@ -69,25 +75,25 @@ const addMoney = async (
         $inc: { balance: amount },
       },
       { runValidators: true, new: true, session }
-    );
+    ).orFail();
 
-    const newTransaction = await Transaction.create({
+    const newTransaction = await Transaction.create([{
       transactionId: getTransactionId(),
       fromId: null,
       toId: isWalletExists.userId,
       amount: amount,
       systemRevenue: 0,
-      role: isWalletExists.userId.role,
+      role: role,
       status: TransactionStatus.COMPLETED,
       transactionType:
-        isWalletExists.userId.role === Role.AGENT
+        role === Role.AGENT
           ? TransactionType.AGENT_SELF_CASH_IN
           : TransactionType.USER_CASH_IN,
-    });
+    }], {session});
 
     await session.commitTransaction();
     return {
-      transactionId: newTransaction.transactionId,
+      transactionId: newTransaction[0].transactionId,
       amount: amount,
       totalBalance: updatedWallet.balance,
     };
