@@ -38,25 +38,40 @@ There are three roles in the system: **USER, ADMIN, and AGENT**.
 
 ### API endpoints:
 
+- ### 🔹 Auth Routes
+  - 1. #### Login
+       **POST** `/api/v1/auth/login` `Public`
+  - 2. #### Logout
+       **POST** `/api/v1/auth/logout` `Public`
+  - 3. #### Refresh Token
+       **POST** `/api/v1/auth/refresh-token` `Public`
 
-- Auth:
-  - 1. POST: /api/v1/auth/login --> Public Route
-  - 2. POST: /api/v1/auth/logout --> Public Route
-  - 3. POST: /api/v1/auth/refresh-token --> Public Route
 - ### 🔹 User Routes
   - 1. #### Register User
-       **POST** `/api/v1/users/register` `Public Route` 
-    - 2. PATCH: /api/v1/user/verify-with-kyc/:id --> Protected(All Roles) - 3. PATCH: /api/v1/user/:userId --> Protected(All Roles) - 4. GET: /api/v1/user/all-users-with-wallet --> Protected(ADMIN Only)
+       **POST** `/api/v1/users/register` `Public`
+  - 2. #### Verify User with KYC  
+       **PATCH** `/api/v1/user/verify-with-kyc/:id` `Protected (All Roles)`
+  - 3. #### Update User  
+       **PATCH** `/api/v1/user/:userId` `Protected (All Roles)`
+  - 4. #### Get All Users with Wallet  
+       **GET** `/api/v1/user/all-users-with-wallet` `Protected (ADMIN Only)`
 
-- Wallet:
+- ### 🔹 Wallet Routes
+  - 1. #### Check Balance  
+       **GET** `/api/v1/wallet/check-balance` `Protected (USER, AGENT)`
+  - 2. #### Get All Wallets  
+       **GET** `/api/v1/wallet/all-wallets` `Protected (ADMIN)`
+  - 3. #### Add Money by Agent  
+       **POST** `/api/v1/wallet/add-money-by-agent/:phone` `Protected (Only AGENT)`
+  - 4. #### Cash Out  
+       **POST** `/api/v1/wallet/cash-out` `Protected (USER)`
+  - 5. #### Send Money  
+       **POST** `/api/v1/wallet/send-money` `Protected (USER, AGENT)`
+  - 6. #### Add Money  
+       **POST** `/api/v1/wallet/add-money/:phone` `Protected (USER, AGENT)`
+  - 7. #### Update Wallet Status  
+       **PATCH** `/api/v1/wallet/update-status/:id` `Protected (USER, AGENT, ADMIN)`
 
-  - 1. GET: /api/v1/wallet/check-balance --> Protected(USER, AGENT)
-  - 2. GET: /api/v1/wallet/all-wallets --> Protected(ADMIN)
-  - 3. POST: /api/v1/wallet/add-money-by-agent/:phone --> Protected(Only AGENT)
-  - 4. POST: /api/v1/wallet/cash-out --> Protected (USER)
-  - 5. POST: /api/v1/wallet/send-money --> Protected(USER, AGENT)
-  - 6. POST: /api/v1/wallet/add-money/:phone --> Protected(USER, AGENT)
-  - 7. PATCH: /api/v1/wallet/update-status/:id --> Protected (USER, AGENT, ADMIN)
 
 - Transactions:
 
