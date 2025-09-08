@@ -4,7 +4,7 @@ import { checkAuth } from "../../middleware/checkAuth";
 import { Role } from "../user/user.interface";
 const router = express.Router();
 
-router.post(
+router.get(
   "/user-history",
   checkAuth(Role.USER),
   TransactionControllers.viewUserHistory
@@ -21,4 +21,5 @@ router.get(
   checkAuth(Role.ADMIN),
   TransactionControllers.allTransactions
 );
+
 export const TransactionRoutes = router;

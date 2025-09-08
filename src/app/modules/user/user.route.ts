@@ -1,9 +1,14 @@
 import express from "express";
 import { validateRequest } from "../../middleware/validateRequest";
-import { createUserZodSchema, updateUserZodSchema, verifyWithKYCZodSchema } from "./user.validation";
+import {
+  createUserZodSchema,
+  updateUserZodSchema,
+  verifyWithKYCZodSchema,
+} from "./user.validation";
 import { UserControllers } from "./user.controller";
 import { checkAuth } from "../../middleware/checkAuth";
 import { Role } from "./user.interface";
+import { multerUpload } from "../../config/multer.config";
 const router = express.Router();
 
 router.post(
@@ -14,8 +19,9 @@ router.post(
 
 router.patch(
   "/verify-with-kyc/:id",
-  validateRequest(verifyWithKYCZodSchema),
   checkAuth(...Object.values(Role)),
+  multerUpload.single("file"),
+  validateRequest(verifyWithKYCZodSchema),
   UserControllers.verifyWithKYC
 );
 
@@ -31,5 +37,9 @@ router.get(
   checkAuth(Role.ADMIN),
   UserControllers.getUsersAndWallet
 );
+
+router.get("/all-user", UserControllers.getAllUsers);
+
+router.get("/me", checkAuth(...Object.values(Role)), UserControllers.getMe);
 
 export const UserRoutes = router;

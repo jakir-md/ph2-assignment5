@@ -12,17 +12,26 @@ interface EnvConfig {
   NODE_ENV: string;
 
   //BCRYPT
-  BCRYPT_SALT_ROUND:string;
+  BCRYPT_SALT_ROUND: string;
 
   //frontend url
   FRONT_END_URL: string;
 
   //db url
-  DB_URL:string;
+  DB_URL: string;
   PORT: string;
 
   //express session
-  EXPRESS_SESSION_SECRET:string;
+  EXPRESS_SESSION_SECRET: string;
+
+  //#cloudinary
+  CLOUDINARY_CLOUD_NAME: string;
+  CLOUDINARY_API_KEY: string;
+  CLOUDINARY_API_SECRET: string;
+
+  //#admin
+  ADMIN_EMAIL:string;
+  ADMIN_PASS:string;
 }
 
 function getEnv(key: string): string {
@@ -41,5 +50,10 @@ export const EnvVars: EnvConfig = {
   FRONT_END_URL: getEnv("FRONT_END_URL"),
   DB_URL: getEnv("DB_URL"),
   PORT: getEnv("PORT"),
-  EXPRESS_SESSION_SECRET: getEnv("EXPRESS_SESSION_SECRET")
+  EXPRESS_SESSION_SECRET: getEnv("EXPRESS_SESSION_SECRET"),
+  CLOUDINARY_API_KEY: getEnv("CLOUDINARY_API_KEY"),
+  CLOUDINARY_API_SECRET: getEnv("CLOUDINARY_API_SECRET"),
+  CLOUDINARY_CLOUD_NAME: getEnv("CLOUDINARY_CLOUD_NAME"),
+  ADMIN_EMAIL:getEnv("ADMIN_EMAIL"),
+  ADMIN_PASS:getEnv("ADMIN_PASS"),
 };

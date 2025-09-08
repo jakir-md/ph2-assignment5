@@ -10,8 +10,8 @@ import {
 } from "../utils/userTokens";
 
 const loginUser = async (payload: Partial<IUser>) => {
-  const { phone, password } = payload;
-  const isUserExists = await User.findOne({ phone });
+  const { email, password } = payload;
+  const isUserExists = await User.findOne({ email });
   if (!isUserExists) {
     throw new AppError(StatusCodes.BAD_REQUEST, "User Not Found");
   }
@@ -38,7 +38,8 @@ const getAccessToken = async (refreshToken: string) => {
   const token = await getAccessTokenWithRefreshToken(refreshToken);
   return { accessToken: token };
 };
+
 export const AuthServices = {
   loginUser,
-  getAccessToken
+  getAccessToken,
 };

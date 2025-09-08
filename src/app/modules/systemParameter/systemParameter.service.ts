@@ -21,6 +21,22 @@ const addSystemParameter = async (payload: Partial<ISystemParameters>) => {
   const parameter = await SystemParameter.create(payload);
   return parameter;
 };
+
+const getCurrentSystemParameter = async () => {
+  const isCurrentParameterExists = await SystemParameter.findOne({
+    status: SystemParameterStatus.CURRENT,
+  });
+
+  if (!isCurrentParameterExists) {
+    throw new AppError(
+      StatusCodes.SERVICE_UNAVAILABLE,
+      "Out of service due to internal problem. Sorry for the inconvenience"
+    );
+  }
+
+  return isCurrentParameterExists;
+};
 export const SystemParameterServices = {
   addSystemParameter,
+  getCurrentSystemParameter,
 };

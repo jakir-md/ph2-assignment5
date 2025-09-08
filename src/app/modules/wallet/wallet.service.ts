@@ -7,6 +7,7 @@ import { SystemParameter } from "../systemParameter/systemParameter.model";
 import { SystemParameterStatus } from "../systemParameter/systemParameter.interface";
 import { Role } from "../user/user.interface";
 import { Transaction } from "../transaction/transaction.model";
+import bcrypt from "bcryptjs";
 import {
   TransactionStatus,
   TransactionType,
@@ -77,19 +78,24 @@ const addMoney = async (
       { runValidators: true, new: true, session }
     ).orFail();
 
-    const newTransaction = await Transaction.create([{
-      transactionId: getTransactionId(),
-      fromId: null,
-      toId: isWalletExists.userId,
-      amount: amount,
-      systemRevenue: 0,
-      role: role,
-      status: TransactionStatus.COMPLETED,
-      transactionType:
-        role === Role.AGENT
-          ? TransactionType.AGENT_SELF_CASH_IN
-          : TransactionType.USER_CASH_IN,
-    }], {session});
+    const newTransaction = await Transaction.create(
+      [
+        {
+          transactionId: getTransactionId(),
+          fromId: null,
+          toId: isWalletExists.userId,
+          amount: amount,
+          systemRevenue: 0,
+          role: role,
+          status: TransactionStatus.COMPLETED,
+          transactionType:
+            role === Role.AGENT
+              ? TransactionType.AGENT_SELF_CASH_IN
+              : TransactionType.USER_CASH_IN,
+        },
+      ],
+      { session }
+    );
 
     await session.commitTransaction();
     return {
@@ -184,7 +190,8 @@ const addMoneyByAgent = async (
 const sendMoney = async (
   phone: string,
   receiverPhone: string,
-  amount: number
+  amount: number,
+  pin: string
 ) => {
   const isUserExists = await User.findOne({ phone });
   if (!isUserExists) {
@@ -195,7 +202,17 @@ const sendMoney = async (
     throw new AppError(StatusCodes.FORBIDDEN, "User is not KYC Verified.");
   }
 
+  await bcrypt.compare(pin, isUserExists.walletPin as string);
+
+  if (phone === receiverPhone) {
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      "Sending money to your own number is not permitted."
+    );
+  }
+
   const userWallet = await Wallet.findOne({ phone });
+
   if (userWallet?.status !== WalletStatus.ACTIVE) {
     throw new AppError(
       StatusCodes.FORBIDDEN,
@@ -224,6 +241,7 @@ const sendMoney = async (
   if (userWallet.balance - sendMoneyChargeAmount - amount < 0) {
     throw new AppError(StatusCodes.BAD_REQUEST, "Insufficient Amount.");
   }
+
   const isReceiverExists = await User.findOne({ phone: receiverPhone });
   if (!isReceiverExists) {
     const newTransaction = await Transaction.create({
@@ -375,22 +393,6 @@ const cashOut = async (phone: string, amount: number, agentPhone: string) => {
         $inc: { balance: amount, totalComission: agentComissionAmount },
       },
       { runValidators: true, new: true, session }
-    );
-
-    await Wallet.findOneAndUpdate(
-      {
-        role: Role.ADMIN,
-      },
-      {
-        $inc: {
-          balance: adminMarginAmount,
-        },
-      },
-      {
-        runValidators: true,
-        new: true,
-        session,
-      }
     );
 
     const newTransaction = await Transaction.create(

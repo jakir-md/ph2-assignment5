@@ -1,26 +1,9 @@
 import { model, Schema } from "mongoose";
 import { ISActive, IUser, Role } from "./user.interface";
 
-const nameSchema = new Schema(
-  {
-    firstName: {
-      type: String,
-      required: true,
-    },
-    lastName: {
-      type: String,
-    },
-  },
-  {
-    versionKey: false,
-    timestamps: false,
-    _id: false,
-  }
-);
-
 const userSchema = new Schema<IUser>(
   {
-    name: nameSchema,
+    name: { type: String, required: true },
     email: {
       type: String,
       required: true,
@@ -57,17 +40,21 @@ const userSchema = new Schema<IUser>(
       ref: "Wallet",
       default: null,
     },
+    walletPin:{
+      type:String,
+      default: null
+    },
     nomineeName: {
       type: String,
-      default: null
+      default: null,
     },
     nomineeNID: {
       type: String,
-      default: null
+      default: null,
     },
     userNID: {
       type: String,
-      default: null
+      default: null,
     },
   },
   {

@@ -8,9 +8,17 @@ import { TransactionServices } from "./transaction.service";
 const viewUserHistory = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { userId } = req.user;
-    const result = await TransactionServices.viewUserHistory(userId);
+    const filter = req.query;
+    const result = await TransactionServices.viewUserHistory(
+      userId,
+      filter as Record<string, string>
+    );
     sendResponse(res, {
-      data: result,
+      data: result.history,
+      meta: {
+        total: result.total,
+        totalPage: Math.ceil(result.total / Number(filter.limit)),
+      },
       success: true,
       statusCode: StatusCodes.OK,
       message: "Transaction History Retrieved Successfully.",

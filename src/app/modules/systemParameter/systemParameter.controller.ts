@@ -19,6 +19,19 @@ const addSystemParameter = catchAsync(
   }
 );
 
+const getCurrentSystemParameter = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const parameter = await SystemParameterServices.getCurrentSystemParameter();
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Parameter Successfully retrieved.",
+      data: parameter,
+    });
+  }
+);
+
 export const SystemParameterControllers = {
   addSystemParameter,
+  getCurrentSystemParameter,
 };

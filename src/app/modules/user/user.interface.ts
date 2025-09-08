@@ -23,6 +23,7 @@ export interface IUser {
     address?:string;
     phone:string;
     userNID?:string;
+    walletPin?:string;
     nomineeName?:string;
     nomineeNID?:string;
     isDeleted?: boolean;

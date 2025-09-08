@@ -36,8 +36,8 @@ const addMoney = catchAsync(
 const sendMoney = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { phone } = req.user;
-    const { amount, receiverPhone } = req.body;
-    const result = await WalletServices.sendMoney(phone, receiverPhone, amount);
+    const { amount, receiverPhone, pin } = req.body;
+    const result = await WalletServices.sendMoney(phone, receiverPhone, amount, pin);
     sendResponse(res, {
       data: result,
       success: true,

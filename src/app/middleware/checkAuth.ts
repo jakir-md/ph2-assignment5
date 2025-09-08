@@ -11,13 +11,13 @@ export const checkAuth =
   (...authRoles: string[]) =>
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const token = req.headers.authorization;
+      const token = req.headers.authorization || req.cookies.accessToken;
       if (!token) {
         throw new AppError(StatusCodes.BAD_REQUEST, "Token Not Found.");
       }
 
       const decodedToken = verifyToken(
-        token,
+        token as string,
         EnvVars.JWT_ACCESS_TOKEN_SECRET
       ) as JwtPayload;
 

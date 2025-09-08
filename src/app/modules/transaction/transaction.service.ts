@@ -1,17 +1,30 @@
 import { Transaction } from "./transaction.model";
 
-const viewUserHistory = async (userId: string) => {
+const viewUserHistory = async (
+  userId: string,
+  filter: Record<string, string>
+) => {
+  const { page, limit } = filter;
   const history = await Transaction.find(
-    { fromId: userId },
+    { $or: [{ fromId: userId }, { toId: userId }] },
     {
       userCharge: 1,
       transactionType: 1,
       amount: 1,
       transactionId: 1,
       status: 1,
+      toPhone: 1,
     }
-  );
-  return history;
+  )
+    .sort("-createdAt")
+    .populate("toId fromId")
+    .skip((Number(page) - 1) * Number(limit))
+    .limit(Number(limit));
+
+  const total = await Transaction.countDocuments({
+    $or: [{ fromId: userId }, { toId: userId }],
+  });
+  return { history, total };
 };
 
 const viewAgentHistory = async (userId: string) => {
@@ -73,20 +86,20 @@ const allTransactions = async () => {
           _id: "$senderInfo._id",
           name: "$senderInfo.name",
           phone: "$senderInfo.phone",
-          role: "$senderInfo.role"
+          role: "$senderInfo.role",
         },
         receiverInfo: {
           _id: "$receiverInfo._id",
           name: "$receiverInfo.name",
           phone: "$receiverInfo.phone",
-          role: "$receiverInfo.role"
+          role: "$receiverInfo.role",
         },
       },
     },
 
     {
-      $limit: 10
-    }
+      $limit: 10,
+    },
   ]);
   return transactions;
 };

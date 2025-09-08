@@ -4,6 +4,7 @@ import express from "express";
 import { WalletRoutes } from "../modules/wallet/wallet.route";
 import { SystemRoutes } from "../modules/systemParameter/systemParameter.route";
 import { TransactionRoutes } from "../modules/transaction/transaction.route";
+import { StatisticsRoutes } from "../modules/statistics/stat.route";
 export const router = express.Router();
 
 const appRoutes = [
@@ -17,16 +18,20 @@ const appRoutes = [
   },
   {
     path: "/wallet",
-    route: WalletRoutes
+    route: WalletRoutes,
   },
   {
-    path: "/systemParameter",
-    route: SystemRoutes
+    path: "/system-parameter",
+    route: SystemRoutes,
   },
   {
     path: "/transaction",
-    route: TransactionRoutes
-  }
+    route: TransactionRoutes,
+  },
+  {
+    path: "/stat",
+    route: StatisticsRoutes,
+  },
 ];
 
 appRoutes.forEach((item) => router.use(item.path, item.route));

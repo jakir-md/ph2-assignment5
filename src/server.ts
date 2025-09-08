@@ -4,6 +4,7 @@ import { Server } from "http";
 import mongoose from "mongoose";
 import { EnvVars } from "./app/config/env";
 import app from "./app";
+import { seedAdmin } from "./app/utils/seedAdmin";
 let server: Server;
 
 const connectDb = async () => {
@@ -21,6 +22,7 @@ const connectDb = async () => {
 
 (async () => {
   await connectDb();
+  await seedAdmin();
 })();
 
 process.on("unhandledRejection", (error) => {

@@ -2,10 +2,7 @@ import { z } from "zod";
 import { Role, ISActive } from "./user.interface";
 
 export const createUserZodSchema = z.object({
-  name: z.object({
-    firstName: z.string({ required_error: "First Name is required." }).min(1),
-    lastName: z.string().optional(),
-  }),
+  name: z.string({ required_error: "Name is required." }).min(2),
   email: z
     .string({ required_error: "Email is required" })
     .email("Invalid email format"),
@@ -22,8 +19,6 @@ export const createUserZodSchema = z.object({
     .regex(/^(?:\+88|88)?01[3-9]\d{8}$/, {
       message: "Invalid Phone Number",
     }),
-  picture: z.string().optional(),
-  address: z.string().optional(),
   role: z.enum(Object.values(Role) as [string]).default(Role.USER),
 });
 
@@ -61,6 +56,6 @@ export const verifyWithKYCZodSchema = z.object({
     .string({ required_error: "User NID is required." })
     .min(10)
     .max(10),
-  picture: z.string({ required_error: "User photo is required." }),
   address: z.string({ required_error: "User address is required." }),
+  walletPin: z.string({ required_error: "Wallet Pin Must is required." }),
 });

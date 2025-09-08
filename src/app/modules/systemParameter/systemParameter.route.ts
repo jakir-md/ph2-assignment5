@@ -13,4 +13,10 @@ router.post(
   SystemParameterControllers.addSystemParameter
 );
 
+router.get(
+  "/current-parameter",
+  checkAuth(...Object.values(Role)),
+  SystemParameterControllers.getCurrentSystemParameter
+);
+
 export const SystemRoutes = router;

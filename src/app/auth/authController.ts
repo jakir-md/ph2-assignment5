@@ -5,7 +5,6 @@ import { catchAsync } from "../utils/catchAsync";
 import { StatusCodes } from "http-status-codes";
 import { AuthServices } from "./authService";
 import { setAuthCookie } from "../utils/setAuthCookie";
-import { EnvVars } from "../config/env";
 import AppError from "../errorHelper/AppError";
 
 const loginUser = catchAsync(
@@ -31,13 +30,13 @@ const logOut = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     res.clearCookie("accessToken", {
       httpOnly: true,
-      secure: EnvVars.NODE_ENV === "production",
+      secure: true,
       sameSite: "lax",
     });
 
     res.clearCookie("refreshToken", {
       httpOnly: true,
-      secure: EnvVars.NODE_ENV === "production",
+      secure: true,
       sameSite: "lax",
     });
 

@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 import { EnvVars } from "../../config/env";
 import { JwtPayload } from "jsonwebtoken";
 import { Wallet } from "../wallet/wallet.model";
+import { QueryBuilder } from "../../utils/QueryBuilder";
 
 const registerUser = async (payload: Partial<IUser>) => {
   const { phone, password } = payload;
@@ -127,8 +128,18 @@ const verifyWithKYC = async (
     throw new AppError(StatusCodes.BAD_REQUEST, "User Not Found.");
   }
 
+  if (isUserExits.isVerified) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "To reset your KYC information contact admin."
+    );
+  }
+
   if (isUserExits.walletId === null) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "User Wallet Not Found.");
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "Your Wallet Not Found. Please contact with Admin."
+    );
   }
 
   if (isUserExits.isDeleted || isUserExits.isActive === ISActive.INACTIVE) {
@@ -138,45 +149,29 @@ const verifyWithKYC = async (
     );
   }
 
-  if (
-    "userNID" in isUserExits ||
-    "nomineeNID" in isUserExits ||
-    isUserExits.nomineeName === null ||
-    isUserExits.address === null ||
-    isUserExits.picture === null
-  ) {
-    if (payload.userNID) {
-      const isUserNIDExists = await User.findOne({ userNID: payload.userNID });
+  if (payload.userNID) {
+    const isUserNIDExists = await User.findOne({ userNID: payload.userNID });
 
-      if (isUserNIDExists) {
-        throw new AppError(StatusCodes.BAD_REQUEST, "User NID Already Exists.");
-      }
+    if (isUserNIDExists) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "User NID Already Exists.");
     }
-
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { ...payload },
-      { runValidators: true, new: true }
-    ).orFail();
-
-    if (
-      updatedUser?.userNID !== null &&
-      updatedUser?.nomineeNID !== null &&
-      updatedUser?.picture !== null &&
-      updatedUser?.address !== null &&
-      updatedUser?.nomineeName !== null
-    ) {
-      updatedUser.isVerified = true;
-      await updatedUser.save();
-
-      return true;
-    }
-  } else {
-    throw new AppError(
-      StatusCodes.BAD_REQUEST,
-      "You cannot reset your KYC information."
-    );
   }
+
+  payload.walletPin = await bcrypt.hash(
+    payload.walletPin as string,
+    Number(EnvVars.BCRYPT_SALT_ROUND)
+  );
+
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    { ...payload },
+    { runValidators: true, new: true }
+  ).orFail();
+
+  updatedUser.isVerified = true;
+  await updatedUser.save();
+
+  return true;
 };
 
 const getUsersAndWallet = async () => {
@@ -216,9 +211,37 @@ const getUsersAndWallet = async () => {
   return usersWithWallet;
 };
 
+const getMe = async (email: string, phone: string) => {
+  const user = await User.findOne({
+    $or: [{ email }, { phone }],
+  })
+    .populate("walletId")
+    .select("-password");
+
+  return user;
+};
+
+const getAllUsers = async (query: Record<string, string>) => {
+  const queryBuilder = new QueryBuilder(User.find(), query);
+  const users = queryBuilder
+    .populate()
+    .search(["name", "phone", "email", "userNID", "nomineeNID", "address"])
+    .filter()
+    .fields()
+    .paginate();
+
+  const [data, meta] = await Promise.all([
+    users.build(),
+    queryBuilder.getMeta(),
+  ]);
+  return { data, meta };
+};
+
 export const UserServices = {
   registerUser,
   updateUserInfo,
   verifyWithKYC,
   getUsersAndWallet,
+  getMe,
+  getAllUsers,
 };
