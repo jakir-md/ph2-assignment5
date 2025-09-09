@@ -76,19 +76,150 @@ const adminAnalyticsStat = async (year: number, quater: string) => {
 const transactionStat = async (query) => {
   const { selectedUsers, selectedStatus, selectedType, fromDate, toDate } =
     query;
+
+  const useableSearchTerm = query.searchTerm || "";
+  const searchObject = {
+    $or: ["email", "name", "address", "phone"].map((field) => ({
+      [`from.${field}`]: { $regex: useableSearchTerm, $options: "i" },
+    })),
+  };
+
+  //implemented transactionId wise search
+  searchObject.$or.push({ transactionId: useableSearchTerm });
+
+  //adding to
+  ["email", "name", "address", "phone"].forEach((field) => {
+    searchObject.$or.push({
+      [`to.${field}`]: { $regex: useableSearchTerm, $options: "i" },
+    });
+  });
+
+  
+  const fromDate1 = new Date(fromDate);
+  const toDate1 = new Date(toDate);
   const statusArray = selectedStatus.split(",");
   const typeArray = selectedType.split(",");
   const usersArray = selectedUsers.split(",");
   const result = await Transaction.aggregate([
     {
       $match: {
-        status: { $in: statusArray },
-        role: { $in: usersArray },
-        transactionType: { $in: typeArray },
-        createdAt: {
-          $gte: new Date(fromDate),
-          $lte: new Date(toDate),
-        },
+        $and: [
+          {
+            status: { $in: statusArray },
+            role: { $in: usersArray },
+            transactionType: { $in: typeArray },
+            createdAt: {
+              $gte: fromDate1,
+              $lte: toDate1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "fromId",
+        foreignField: "_id",
+        as: "from",
+      },
+    },
+    {
+      $unwind: {
+        path: "$from",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "toId",
+        foreignField: "_id",
+        as: "to",
+      },
+    },
+    {
+      $unwind: {
+        path: "$to",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    { $match: searchObject },
+    {
+      $facet: {
+        overAll: [
+          {
+            $group: {
+              _id: null,
+              totalAmount: { $sum: "$amount" },
+              averageAmount: { $avg: "$amount" },
+              count: { $sum: 1 },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              totalAmount: 1,
+              averageAmount: 1,
+              count: 1,
+            },
+          },
+        ],
+        byDay: [
+          {
+            $group: {
+              _id: {
+                year: { $year: "$createdAt" },
+                month: { $month: "$createdAt" },
+                day: { $dayOfMonth: "$createdAt" },
+              },
+              totalAmount: { $sum: "$amount" },
+            },
+          },
+          { $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 } },
+          {
+            $addFields: {
+              date: {
+                $dateToString: {
+                  format: "%Y-%m-%d",
+                  date: {
+                    $dateFromParts: {
+                      year: "$_id.year",
+                      month: "$_id.month",
+                      day: "$_id.day",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              totalAmount: 1,
+              date: 1,
+            },
+          },
+        ],
+        transactions: [
+          {
+            $project: {
+              _id: 1,
+              amount: 1,
+              status: 1,
+              role: 1,
+              systemRevenue: 1,
+              userCharge: 1,
+              agentComission: 1,
+              transactionType: 1,
+              transactionId: 1,
+              createdAt: 1,
+              fromPhone: "$from.phone",
+              toPhone: "$to.phone",
+            },
+          },
+          { $sort: { createdAt: 1 } },
+        ],
       },
     },
   ]);

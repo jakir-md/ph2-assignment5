@@ -68,6 +68,7 @@ const updateStatus = catchAsync(
     const phone = req.params.phone;
     const decodedToken = req.user;
     const { status } = req.body;
+    console.log(req.body);
     const result = await WalletServices.updateStatus(
       decodedToken,
       phone,

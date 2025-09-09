@@ -14,6 +14,7 @@ const viewUserHistory = async (
       transactionId: 1,
       status: 1,
       toPhone: 1,
+      agentComission: 1
     }
   )
     .sort("-createdAt")

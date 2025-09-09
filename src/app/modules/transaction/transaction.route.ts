@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.get(
   "/user-history",
-  checkAuth(Role.USER),
+  checkAuth(Role.USER, Role.AGENT),
   TransactionControllers.viewUserHistory
 );
 
