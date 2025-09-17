@@ -9,15 +9,16 @@ const viewUserHistory = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { userId } = req.user;
     const filter = req.query;
+    const limit = req.query.limit;
     const result = await TransactionServices.viewUserHistory(
       userId,
       filter as Record<string, string>
     );
     sendResponse(res, {
-      data: result.history,
+      data: result.transactions,
       meta: {
-        total: result.total,
-        totalPage: Math.ceil(result.total / Number(filter.limit)),
+        total: result.totalDocuments,
+        totalPage: Math.ceil(result.totalDocuments / Number(limit)),
       },
       success: true,
       statusCode: StatusCodes.OK,

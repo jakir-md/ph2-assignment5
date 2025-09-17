@@ -5,6 +5,7 @@ import { WalletRoutes } from "../modules/wallet/wallet.route";
 import { SystemRoutes } from "../modules/systemParameter/systemParameter.route";
 import { TransactionRoutes } from "../modules/transaction/transaction.route";
 import { StatisticsRoutes } from "../modules/statistics/stat.route";
+import { AddMoneyRoutes } from "../modules/addMoney/addMoney.route";
 export const router = express.Router();
 
 const appRoutes = [
@@ -31,6 +32,10 @@ const appRoutes = [
   {
     path: "/stat",
     route: StatisticsRoutes,
+  },
+  {
+    path: "/add-money",
+    route: AddMoneyRoutes,
   },
 ];
 

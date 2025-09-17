@@ -4,6 +4,7 @@ import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { StatusCodes } from "http-status-codes";
 import { WalletServices } from "./wallet.service";
+import { JwtPayload } from "jsonwebtoken";
 
 const getBalance = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -21,9 +22,10 @@ const getBalance = catchAsync(
 const addMoney = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const decodedToken = req.user;
-    const { amount } = req.body;
+    const {pin, amount} = req.body;
+    console.log("pin found", amount);
     const phone = req.params.phone;
-    const result = await WalletServices.addMoney(decodedToken, phone, amount);
+    const result = await WalletServices.addMoney(decodedToken, phone, pin, amount);
     sendResponse(res, {
       data: result,
       success: true,

@@ -24,10 +24,10 @@ const adminAnalyticsStat = catchAsync(
   }
 );
 
-const transactionStat = catchAsync(
+const agentComissionStat = catchAsync(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async (req: Request, res: Response, next: NextFunction) => {
-    const result = await StatisticsServices.transactionStat(req.query);
+    const result = await StatisticsServices.agentComissionStat();
     sendResponse(res, {
       data: result,
       success: true,
@@ -40,4 +40,26 @@ const transactionStat = catchAsync(
   }
 );
 
-export const StatisticsControllers = { adminAnalyticsStat, transactionStat };
+const transactionStat = catchAsync(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { limit } = req.query;
+    const result = await StatisticsServices.transactionStat(
+      req.query as Record<string, string>
+    );
+    sendResponse(res, {
+      data: result,
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Admin transaction statistics Retrieved Successfully.",
+      meta: {
+        totalPage: Math.ceil(result.totalDocuments / Number(limit)),
+      },
+    });
+  }
+);
+export const StatisticsControllers = {
+  adminAnalyticsStat,
+  transactionStat,
+  agentComissionStat,
+};

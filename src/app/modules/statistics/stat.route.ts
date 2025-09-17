@@ -16,4 +16,10 @@ router.get(
   StatisticsControllers.transactionStat
 );
 
+router.get(
+  "/agentComission",
+  checkAuth(Role.AGENT),
+  StatisticsControllers.agentComissionStat
+);
+
 export const StatisticsRoutes = router;

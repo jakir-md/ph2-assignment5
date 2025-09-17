@@ -1,45 +1,109 @@
 import { Transaction } from "./transaction.model";
+import { ObjectId } from "mongodb";
 
 const viewUserHistory = async (
   userId: string,
   filter: Record<string, string>
 ) => {
-  const { page, limit } = filter;
-  const history = await Transaction.find(
-    { $or: [{ fromId: userId }, { toId: userId }] },
-    {
-      userCharge: 1,
-      transactionType: 1,
-      amount: 1,
-      transactionId: 1,
-      status: 1,
-      toPhone: 1,
-      agentComission: 1
-    }
-  )
-    .sort("-createdAt")
-    .populate("toId fromId")
-    .skip((Number(page) - 1) * Number(limit))
-    .limit(Number(limit));
+  const { page, limit, fromDate, toDate, selectedStatus, searchTerm } = filter;
 
-  const total = await Transaction.countDocuments({
-    $or: [{ fromId: userId }, { toId: userId }],
+  const statusArray = selectedStatus.split(",") || [];
+  const useableSearchTerm = searchTerm || "";
+  const searchObject = {
+    $or: ["email", "name", "address", "phone"].map((field) => ({
+      [`from.${field}`]: { $regex: useableSearchTerm, $options: "i" },
+    })),
+  };
+  searchObject.$or.push({
+    transactionId: { $regex: useableSearchTerm, $options: "i" },
   });
-  return { history, total };
-};
+  ["email", "name", "address", "phone"].forEach((field) => {
+    searchObject.$or.push({
+      [`to.${field}`]: { $regex: useableSearchTerm, $options: "i" },
+    });
+  });
 
-const viewAgentHistory = async (userId: string) => {
-  const history = await Transaction.find(
-    { $or: [{ toId: userId }, { fromId: userId }] },
+  const userObjectId = new ObjectId(userId);
+  const skip = (Number(page) - 1) * Number(limit);
+  const history = await Transaction.aggregate([
     {
-      transactionType: 1,
-      amount: 1,
-      agentComission: 1,
-      transactionId: 1,
-      status: 1,
-    }
-  );
-  return history;
+      $match: {
+        $and: [
+          { status: { $in: statusArray } },
+          { createdAt: { $gte: new Date(fromDate), $lte: new Date(toDate) } },
+          { $or: [{ fromId: userObjectId }, { toId: userObjectId }] },
+        ],
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "fromId",
+        foreignField: "_id",
+        as: "from",
+      },
+    },
+    {
+      $unwind: {
+        path: "$from",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "toId",
+        foreignField: "_id",
+        as: "to",
+      },
+    },
+    {
+      $unwind: {
+        path: "$to",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $match: searchObject,
+    },
+    {
+      $facet: {
+        transactions: [
+          { $sort: { createdAt: -1 } },
+          { $skip: skip },
+          { $limit: Number(limit) },
+          {
+            $project: {
+              _id: 1,
+              amount: 1,
+              status: 1,
+              role: 1,
+              userCharge: 1,
+              agentComission: 1,
+              transactionType: 1,
+              transactionId: 1,
+              createdAt: 1,
+              fromPhone: { $ifNull: ["$from.phone", "Bank to Wallet"] },
+              toPhone: "$to.phone",
+            },
+          },
+        ],
+        totalDocuments: [
+          {
+            $group: {
+              _id: null,
+              count: { $sum: 1 },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  return {
+    transactions: history[0].transactions,
+    totalDocuments: history[0].totalDocuments[0]?.count || 0,
+  };
 };
 
 const allTransactions = async () => {
@@ -107,6 +171,5 @@ const allTransactions = async () => {
 
 export const TransactionServices = {
   viewUserHistory,
-  viewAgentHistory,
   allTransactions,
 };

@@ -14,6 +14,8 @@ import {
 } from "../transaction/transaction.interface";
 import { getTransactionId } from "../../utils/getTransactionId";
 import { JwtPayload } from "jsonwebtoken";
+import { ISSLCommerz } from "../sslCommerz/sslCommerz.interface";
+import { sslService } from "../sslCommerz/sslCommerz.service";
 
 const getBalance = async (phone: string) => {
   const isWalletExists = await Wallet.findOne({ phone });
@@ -36,6 +38,7 @@ const getBalance = async (phone: string) => {
 const addMoney = async (
   decodedToken: JwtPayload,
   phone: string,
+  pin: string,
   amount: number
 ) => {
   if (decodedToken.phone !== phone) {
@@ -45,15 +48,19 @@ const addMoney = async (
     );
   }
 
-  const isWalletExists = await Wallet.findOne({ phone }).populate("userId");
+  const isUserExists = await User.findOne({ phone });
+  const isWalletExists = await Wallet.findOne({ phone });
+
+  if (!isUserExists) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "User Doesn't Exists.");
+  }
+
+  if (!isUserExists.isVerified) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Update KYC to Add  Money.");
+  }
 
   if (!isWalletExists) {
     throw new AppError(StatusCodes.BAD_REQUEST, "Wallet Doesn't Exists.");
-  }
-
-  let role = "";
-  if ("role" in isWalletExists.userId) {
-    role = isWalletExists.userId.role;
   }
 
   if (
@@ -66,18 +73,19 @@ const addMoney = async (
     );
   }
 
+  const isPinMatch = await bcrypt.compare(
+    pin as string,
+    isUserExists.walletPin as string
+  );
+
+  if (!isPinMatch) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Wrong Pin.");
+  }
+
   const session = await Wallet.startSession();
   session.startTransaction();
 
   try {
-    const updatedWallet = await Wallet.findOneAndUpdate(
-      { phone },
-      {
-        $inc: { balance: amount },
-      },
-      { runValidators: true, new: true, session }
-    ).orFail();
-
     const newTransaction = await Transaction.create(
       [
         {
@@ -86,22 +94,28 @@ const addMoney = async (
           toId: isWalletExists.userId,
           amount: amount,
           systemRevenue: 0,
-          role: role,
-          status: TransactionStatus.COMPLETED,
-          transactionType:
-            role === Role.AGENT
-              ? TransactionType.AGENT_SELF_CASH_IN
-              : TransactionType.USER_CASH_IN,
+          role: isUserExists.role,
+          status: TransactionStatus.PENDING,
+          transactionType: TransactionType.USER_ADD_MONEY,
         },
       ],
       { session }
     );
 
+    const sslPayload: ISSLCommerz = {
+      name: isUserExists.name,
+      address: isUserExists.address as string,
+      amount: amount,
+      phoneNumber: phone,
+      email: isUserExists.email,
+      transactionId: newTransaction[0]?.transactionId,
+    };
+
+    const sslPayment = await sslService.sslPaymentInit(sslPayload);
+
     await session.commitTransaction();
     return {
-      transactionId: newTransaction[0].transactionId,
-      amount: amount,
-      totalBalance: updatedWallet.balance,
+      paymentURL: sslPayment.GatewayPageURL,
     };
   } catch (error) {
     await session.abortTransaction();
@@ -174,7 +188,8 @@ const addMoneyByAgent = async (
       systemRevenue: -agentComission,
       role: Role.AGENT,
       status: TransactionStatus.COMPLETED,
-      transactionType: TransactionType.USER_CASH_IN_BY_AGENT,
+      transactionType: TransactionType.USER_CASH_IN,
+      agentComission,
     });
 
     await session.commitTransaction();

@@ -15,7 +15,7 @@ router.get(
 router.post(
   "/add-money/:phone",
   validateRequest(addMoneyZodSchema),
-  checkAuth(Role.USER, Role.AGENT),
+  checkAuth(Role.USER),
   WalletControllers.addMoney
 );
 

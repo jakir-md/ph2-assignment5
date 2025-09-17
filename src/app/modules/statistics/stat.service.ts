@@ -39,22 +39,48 @@ const adminAnalyticsStat = async (year: number, quater: string) => {
       },
     },
     {
-      $group: {
-        _id: { month: { $month: "$createdAt" } },
-        totalAmount: { $sum: "$systemRevenue" },
-        count: { $sum: 1 },
-      },
-    },
-    {
-      $sort: {
-        "_id.month": 1,
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        month: "$_id.month",
-        totalAmount: 1,
+      $facet: {
+        quaterWise: [
+          {
+            $group: {
+              _id: { month: { $month: "$createdAt" } },
+              totalAmount: { $sum: "$systemRevenue" },
+              count: { $sum: 1 },
+            },
+          },
+          {
+            $sort: {
+              "_id.month": 1,
+            },
+          },
+          {
+            $set: { totalAmount: { $round: ["$totalAmount", 2] } },
+          },
+          {
+            $project: {
+              _id: 0,
+              month: "$_id.month",
+              totalAmount: 1,
+            },
+          },
+        ],
+        overAll: [
+          {
+            $group: {
+              _id: null,
+              totalAmount: { $sum: "$systemRevenue" },
+            },
+          },
+          {
+            $set: { totalAmount: { $round: ["$totalAmount", 2] } },
+          },
+          {
+            $project: {
+              _id: 0,
+              totalAmount: 1,
+            },
+          },
+        ],
       },
     },
   ]);
@@ -73,9 +99,16 @@ const adminAnalyticsStat = async (year: number, quater: string) => {
   };
 };
 
-const transactionStat = async (query) => {
-  const { selectedUsers, selectedStatus, selectedType, fromDate, toDate } =
-    query;
+const transactionStat = async (query: Record<string, string>) => {
+  const {
+    selectedUsers,
+    limit,
+    page,
+    selectedStatus,
+    selectedType,
+    fromDate,
+    toDate,
+  } = query;
 
   const useableSearchTerm = query.searchTerm || "";
   const searchObject = {
@@ -85,7 +118,9 @@ const transactionStat = async (query) => {
   };
 
   //implemented transactionId wise search
-  searchObject.$or.push({ transactionId: useableSearchTerm });
+  searchObject.$or.push({
+    [`transactionId`]: { $regex: useableSearchTerm, $options: "i" },
+  });
 
   //adding to
   ["email", "name", "address", "phone"].forEach((field) => {
@@ -94,12 +129,13 @@ const transactionStat = async (query) => {
     });
   });
 
-  
   const fromDate1 = new Date(fromDate);
+  fromDate1.setDate(fromDate1.getDate() - 1);
   const toDate1 = new Date(toDate);
-  const statusArray = selectedStatus.split(",");
-  const typeArray = selectedType.split(",");
-  const usersArray = selectedUsers.split(",");
+  const skip = (Number(page) - 1) * Number(limit);
+  const statusArray = selectedStatus?.split(",") || [];
+  const typeArray = selectedType?.split(",") || [];
+  const usersArray = selectedUsers?.split(",") || [];
   const result = await Transaction.aggregate([
     {
       $match: {
@@ -109,8 +145,8 @@ const transactionStat = async (query) => {
             role: { $in: usersArray },
             transactionType: { $in: typeArray },
             createdAt: {
-              $gte: fromDate1,
-              $lte: toDate1,
+              $gte: new Date(fromDate1),
+              $lte: new Date(toDate1),
             },
           },
         ],
@@ -201,7 +237,18 @@ const transactionStat = async (query) => {
             },
           },
         ],
+        totalDocuments: [
+          {
+            $group: {
+              _id: null,
+              count: { $sum: 1 },
+            },
+          },
+        ],
         transactions: [
+          { $sort: { createdAt: -1 } },
+          { $skip: skip },
+          { $limit: Number(limit) },
           {
             $project: {
               _id: 1,
@@ -218,11 +265,80 @@ const transactionStat = async (query) => {
               toPhone: "$to.phone",
             },
           },
-          { $sort: { createdAt: 1 } },
         ],
       },
     },
   ]);
-  return result;
+  return {
+    overAll: result[0]?.overAll,
+    byDay: result[0]?.byDay,
+    transactions: result[0]?.transactions,
+    totalDocuments: result[0]?.totalDocuments[0]?.count || 0,
+  };
 };
-export const StatisticsServices = { adminAnalyticsStat, transactionStat };
+
+const agentComissionStat = async () => {
+  const agentComission = await Transaction.aggregate([
+    {
+      $match: {
+        agentComission: { $exists: true },
+      },
+    },
+    {
+      $facet: {
+        quaterWise: [
+          {
+            $group: {
+              _id: {
+                year: { $year: "$createdAt" },
+                month: { $month: "$createdAt" },
+              },
+              totalAmount: { $sum: "$agentComission" },
+            },
+          },
+          {
+            $sort: { "_id.year": 1, "_id.month": 1 },
+          },
+          {
+            $set: {
+              totalAmount: { $round: ["$totalAmount", 2] },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              month: "$_id.month",
+              totalAmount: 1,
+            },
+          },
+        ],
+        overAll: [
+          {
+            $group: {
+              _id: null,
+              totalAmount: { $sum: "$agentComission" },
+            },
+          },
+          {
+            $set: {
+              totalAmount: { $round: ["$totalAmount", 2] },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              totalAmount: 1,
+            },
+          },
+        ],
+      },
+    },
+  ]);
+  return agentComission;
+};
+
+export const StatisticsServices = {
+  adminAnalyticsStat,
+  transactionStat,
+  agentComissionStat,
+};
