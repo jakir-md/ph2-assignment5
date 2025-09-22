@@ -337,8 +337,49 @@ const agentComissionStat = async () => {
   return agentComission;
 };
 
+const registeredUserStat = async (filter: Record<string, string>) => {
+  const { fromDate, toDate } = filter;
+  const result = await User.aggregate([
+    {
+      $match: {
+        createdAt: {
+          $gte: new Date(fromDate),
+          $lte: new Date(toDate),
+        },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+        },
+        users: {
+          $sum: { $cond: [{ $eq: ["$role", "USER"] }, 1, 0] },
+        },
+        agents: {
+          $sum: { $cond: [{ $eq: ["$role", "AGENT"] }, 1, 0] },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        date: "$_id.date",
+        users: 1,
+        agents: 1,
+      },
+    },
+    {
+      $sort: {
+        date: 1,
+      },
+    },
+  ]);
+  return result;
+};
 export const StatisticsServices = {
   adminAnalyticsStat,
   transactionStat,
   agentComissionStat,
+  registeredUserStat,
 };

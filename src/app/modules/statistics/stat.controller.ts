@@ -40,6 +40,23 @@ const agentComissionStat = catchAsync(
   }
 );
 
+const registeredUserStat = catchAsync(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async (req: Request, res: Response, next: NextFunction) => {
+    const query = req.query as Record<string, string>;
+    const result = await StatisticsServices.registeredUserStat(query);
+    sendResponse(res, {
+      data: result,
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Registered Users Data Retrieved Successfully.",
+      meta: {
+        total: 10,
+      },
+    });
+  }
+);
+
 const transactionStat = catchAsync(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async (req: Request, res: Response, next: NextFunction) => {
@@ -62,4 +79,5 @@ export const StatisticsControllers = {
   adminAnalyticsStat,
   transactionStat,
   agentComissionStat,
+  registeredUserStat,
 };

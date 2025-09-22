@@ -22,4 +22,9 @@ router.get(
   StatisticsControllers.agentComissionStat
 );
 
+router.get(
+  "/registeredUserStat",
+  checkAuth(Role.ADMIN),
+  StatisticsControllers.registeredUserStat
+);
 export const StatisticsRoutes = router;
