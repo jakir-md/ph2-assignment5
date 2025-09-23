@@ -46,6 +46,13 @@ interface EnvConfig {
   SSL_FAIL_FRONTEND_URL: string;
   SSL_CANCEL_FRONTEND_URL: string;
   SSL_IPN_URL: string;
+
+  //SMTP gmail
+  SMTP_PASS: string;
+  SMTP_HOST: string;
+  SMTP_PORT: string;
+  SMTP_USER: string;
+  SMTP_FROM: string;
 }
 
 function getEnv(key: string): string {
@@ -83,4 +90,13 @@ export const EnvVars: EnvConfig = {
   SSL_FAIL_FRONTEND_URL: getEnv("SSL_FAIL_FRONTEND_URL"),
   SSL_CANCEL_FRONTEND_URL: getEnv("SSL_CANCEL_FRONTEND_URL"),
   SSL_IPN_URL: getEnv("SSL_IPN_URL"),
+
+  //smtp
+  
+  //smtp
+  SMTP_PASS: getEnv("SMTP_PASS"),
+  SMTP_HOST: getEnv("SMTP_HOST"),
+  SMTP_PORT: getEnv("SMTP_PORT"),
+  SMTP_USER: getEnv("SMTP_USER"),
+  SMTP_FROM: getEnv("SMTP_FROM"),
 };

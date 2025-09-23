@@ -57,7 +57,12 @@ const registerUser = async (payload: Partial<IUser>) => {
 };
 
 const updateUserInfo = async (
-  payload: Partial<IUser>,
+  payload: Partial<IUser> & {
+    oldPassword: string;
+    password: string;
+    oldPin: string;
+    walletPin: string;
+  },
   decodedToken: JwtPayload,
   userId: string
 ) => {
@@ -93,19 +98,52 @@ const updateUserInfo = async (
     }
   }
 
-  if (payload.password) {
+  if (payload.oldPassword) {
+    const match = await bcrypt.compare(
+      payload.oldPassword,
+      isUserExists.password as string
+    );
+
+    if (!match) {
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        "Old Password Doesn't match."
+      );
+    }
+
     payload.password = await bcrypt.hash(
       payload.password,
       Number(EnvVars.BCRYPT_SALT_ROUND)
     );
   }
 
-  const updatedUser = await User.findOneAndUpdate({ _id: userId }, payload, {
-    runValidators: true,
-    new: true,
-  }).orFail();
+  if (payload.oldPin) {
+    const match = await bcrypt.compare(
+      payload.oldPin,
+      isUserExists.walletPin as string
+    );
 
-  const { password, ...rest } = updatedUser.toObject();
+    if (!match) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "Old Pin Doesn't match.");
+    }
+
+    payload.walletPin = await bcrypt.hash(
+      payload.walletPin,
+      Number(EnvVars.BCRYPT_SALT_ROUND)
+    );
+  }
+
+  const { oldPassword, oldPin, ...filteredPayload } = payload;
+  const updatedUser = await User.findOneAndUpdate(
+    { _id: userId },
+    filteredPayload,
+    {
+      runValidators: true,
+      new: true,
+    }
+  ).orFail();
+
+  const { password, walletPin, ...rest } = updatedUser.toObject();
 
   return rest;
 };

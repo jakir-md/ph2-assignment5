@@ -24,15 +24,19 @@ export const createUserZodSchema = z.object({
 
 //neither ADMIN nor USER can change the isVerified field. It'll be only updated automatically if KYC is completed successfully
 export const updateUserZodSchema = z.object({
-  name: z
-    .object({
-      firstName: z.string().min(1).optional(),
-      lastName: z.string().min(1).optional(),
-    })
-    .optional(),
-  address: z.string().optional(),
+  name: z.string({ required_error: "Name is required." }).min(2).optional(),
+  address: z.string().min(5).optional(),
   isActive: z.enum(Object.values(ISActive) as [string]).optional(),
   isDeleted: z.boolean().optional(),
+  oldPassword: z
+    .string({ required_error: "Password is required" })
+    .min(8)
+    .regex(/^(?=.*[A-Z])/, { message: "At least one uppercase" })
+    .regex(/^(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/, {
+      message: "At least one special character",
+    })
+    .regex(/(?=.*\d)/, { message: "At least one number" })
+    .optional(),
   password: z
     .string({ required_error: "Password is required" })
     .min(8)
@@ -41,6 +45,28 @@ export const updateUserZodSchema = z.object({
       message: "At least one special character",
     })
     .regex(/(?=.*\d)/, { message: "At least one number" })
+    .optional(),
+  oldPin: z
+    .string()
+    .regex(/^\d{5}$/, { message: "PIN must be exactly 5 digits." })
+    .regex(/^(?!([0-9])\1{4}).*$/, {
+      message: "PIN cannot have all identical digits.",
+    })
+    .regex(
+      /^(?!(?:01234|12345|23456|34567|45678|56789|98765|87654|76543|65432|54321)).*$/,
+      { message: "PIN cannot be sequential ascending or descending." }
+    )
+    .optional(),
+  walletPin: z
+    .string()
+    .regex(/^\d{5}$/, { message: "PIN must be exactly 5 digits." })
+    .regex(/^(?!([0-9])\1{4}).*$/, {
+      message: "PIN cannot have all identical digits.",
+    })
+    .regex(
+      /^(?!(?:01234|12345|23456|34567|45678|56789|98765|87654|76543|65432|54321)).*$/,
+      { message: "PIN cannot be sequential ascending or descending." }
+    )
     .optional(),
 });
 
