@@ -43,7 +43,6 @@ const updateUserInfo = catchAsync(
 const getAllUsers = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const query = req.query as Record<string, string>;
-    console.log("query", query);
     const result = await UserServices.getAllUsers(query);
     sendResponse(res, {
       data: result.data,
@@ -93,7 +92,6 @@ const getUsersAndWallet = catchAsync(
 const getMe = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { email, phone } = req.user as JwtPayload;
-    console.log({ email, phone });
     const result = await UserServices.getMe(email, phone);
     sendResponse(res, {
       data: result,

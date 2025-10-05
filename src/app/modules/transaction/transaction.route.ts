@@ -9,13 +9,6 @@ router.get(
   checkAuth(Role.USER, Role.AGENT),
   TransactionControllers.viewUserHistory
 );
-
-router.post(
-  "/comission-history",
-  checkAuth(Role.AGENT),
-  TransactionControllers.viewAgentHistory
-);
-
 router.get(
   "/transaction-history",
   checkAuth(Role.ADMIN),
